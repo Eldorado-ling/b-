@@ -1,12 +1,11 @@
-<p align="center">
-  <h1> B站魔力赏市集爬虫 - 个人版</h1>
-</p>
+<div align="center">
+# B站魔力赏市集爬虫 - 个人版</h1>
 
 一个功能完整的B站魔力赏市集商品信息爬取工具，提供现代化的图形界面和实时数据展示功能。
 
 <img width="1402" height="932" alt="7e5a0dd31dd8a617b93b8cec9040dbf" src="https://github.com/user-attachments/assets/943e35da-da25-49c5-b1c7-9195f5453053" />
 <img width="1402" height="932" alt="21edd93676d290b17abd25da6b83f60" src="https://github.com/user-attachments/assets/e94c0817-f415-4dc2-b518-897e38a27595" />
-
+</div>
 
 ## ✨ 功能特点
 
