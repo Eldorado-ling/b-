@@ -3,6 +3,7 @@ from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
 import json
 import os
+import tempfile
 from typing import List, Dict
 import threading
 import requests
@@ -660,21 +661,26 @@ class CrawlerGUI(ctk.CTk):
     def save_cookie(self):
         cookie = self.cookie_text.get("1.0", "end-1c")
         if cookie.strip():
-            self.saved_cookie = cookie
-            self.save_config()
-            messagebox.showinfo("成功", "Cookie已保存")
+            if self.save_config(cookie=cookie):
+                self.saved_cookie = cookie
+                messagebox.showinfo("成功", "Cookie已保存")
+            else:
+                messagebox.showerror("错误", "保存配置失败，请检查文件权限或磁盘空间后重试")
         else:
             messagebox.showwarning("警告", "Cookie不能为空")
 
     def clear_cookie(self):
-        self.cookie_text.delete("1.0", "end")
-        self.saved_cookie = ""
-        self.save_config()
-        messagebox.showinfo("提示", "Cookie已清空")
+        if self.save_config(cookie=""):
+            self.saved_cookie = ""
+            self.cookie_text.delete("1.0", "end")
+            messagebox.showinfo("提示", "Cookie已清空")
+        else:
+            messagebox.showerror("错误", "清除配置失败，请检查文件权限或磁盘空间后重试")
 
     def change_appearance(self, mode):
         ctk.set_appearance_mode(mode)
-        self.save_config()
+        if not self.save_config():
+            messagebox.showerror("错误", "保存配置失败，请检查文件权限或磁盘空间后重试")
 
     def export_data(self):
         if not self.products_data:
@@ -695,16 +701,53 @@ class CrawlerGUI(ctk.CTk):
             except Exception as e:
                 messagebox.showerror("错误", f"导出失败:\n{str(e)}")
 
-    def save_config(self):
-        config = {
-            "cookie": getattr(self, 'saved_cookie', ""),
-            "appearance": self.appearance_var.get()
-        }
+    def save_config(self, cookie=None):
+        """把配置原子地写入配置文件。
+
+        返回 True 表示配置已经成功落盘，返回 False 表示写入失败；
+        写入失败时原有的配置文件内容保持不变。
+        """
         try:
-            with open(self.config_file, 'w', encoding='utf-8') as f:
-                json.dump(config, f, ensure_ascii=False, indent=2)
+            config = {
+                "cookie": getattr(self, 'saved_cookie', "") if cookie is None else cookie,
+                "appearance": self.appearance_var.get()
+            }
+            payload = json.dumps(config, ensure_ascii=False, indent=2)
         except Exception as e:
-            print(f"保存配置失败: {e}")
+            print(f"保存配置失败: {type(e).__name__}")
+            return False
+        return self._write_config_atomically(payload)
+
+    def _write_config_atomically(self, payload):
+        """先写同目录下的临时文件，再原子替换目标文件。"""
+        destination = self.config_file
+        directory = os.path.dirname(os.path.abspath(destination))
+        temp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=directory,
+                prefix=os.path.basename(destination) + ".tmp-",
+                suffix=".tmp",
+                delete=False,
+            ) as handle:
+                temp_path = handle.name
+                handle.write(payload)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temp_path, destination)
+            temp_path = None
+            return True
+        except Exception as e:
+            print(f"保存配置失败: {type(e).__name__}")
+            return False
+        finally:
+            if temp_path is not None:
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
 
     def load_config(self):
         try:
