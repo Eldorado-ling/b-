@@ -24,7 +24,15 @@ pip install -r requirements.txt
 ### 运行程序
 
 ```bash
-python main.py
+python main_ed.py
+```
+
+### 运行测试
+
+测试只使用 Python 标准库，不需要启动图形界面，也不会访问网络：
+
+```bash
+python -X utf8 -m unittest discover -s tests -v
 ```
 
 ## 📦 依赖包
@@ -51,6 +59,7 @@ requests>=2.31.0
 2. **采集限制**：每日采集数据建议不超过 20,000 条，避免触发限制
 3. **请求频率**：程序已内置 3 秒请求间隔，请勿修改以避免被封禁
 4. **数据保存**：程序配置和 Cookie 会自动保存到 `config.json` 文件
+5. **配置保存失败**：保存 `config.json` 时会先写入同目录下的临时文件再整体替换旧文件；若因磁盘空间不足、目录无写权限等原因写入失败，程序会保留原有配置文件并提示错误，不会留下损坏的配置
 
 ### 导出的 CSV 格式
 
